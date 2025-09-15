@@ -3,10 +3,15 @@
         <title>Task List</title>
     </head>
     <body>
+        <form method="POST" action="/add">
+            <input type="text" name="taskName" placeholder="Enter Task">
+            <input type="text" name="dueDate" placeholder="Enter Due Date">
+            <input type="submit" value="Add Task">
+        </form>
         <table border="3">
             <tr>
                 <th>Tasks</th>
-                <th>Is Done</th>
+                <th>Is_Done</th>
             </tr>
             {% for task in TaskList: %}
                 <tr>
