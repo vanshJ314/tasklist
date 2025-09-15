@@ -1,37 +1,482 @@
-<html>
-    <head>
-        <title>Task List</title>
-    </head>
-    <body>
-        <form method="POST" action="/add">
-            <input type="text" name="taskName" placeholder="Enter Task">
-            <input type="text" name="dueDate" placeholder="Enter Due Date">
-            <input type="submit" value="Add Task">
-        </form>
-        <table border="3">
-            <tr>
-                <th>Tasks</th>
-                <th>Is_Done</th>
-            </tr>
-            {% for task in TaskList: %}
-                <tr>
-                    <form method="POST" action="/update">
-                        <td> 
-                            <input type="hidden" name="id" value="{{ task[0] }}" />
-                            <input type="text" name="updateTask" value="{{ task[1] }}" />
-                        </td>
-                        <td> {{ task[2] }}</td>
-                        <td>
-                            <input type="submit" name="saveOrDelete" value="save" />
-                        </td>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager Pro</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-                        <td>
-                            <input type="submit" name="saveOrDelete" value="X" />
-                        </td>
-                        
-                    </form>
-                </tr>
-            {% endfor %}
-        </table>
-    </body>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 2.5rem;
+            font-weight: 300;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            color: rgba(255,255,255,0.8);
+            font-size: 1.1rem;
+        }
+
+        .add-task-form {
+            background: rgba(255,255,255,0.95);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+            align-items: end;
+            flex-wrap: wrap;
+        }
+
+        .form-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+            padding: 8px 12px;
+            font-size: 14px;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+            padding: 8px 12px;
+            font-size: 14px;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .tasks-container {
+            background: rgba(255,255,255,0.95);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .tasks-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+        }
+
+        .tasks-header h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .task-item {
+            padding: 20px 30px;
+            border-bottom: 1px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+
+        .task-item:hover {
+            background: #f8f9fa;
+        }
+
+        .task-item:last-child {
+            border-bottom: none;
+        }
+
+        .task-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .task-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex: 1;
+        }
+
+        .task-checkbox {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            transform: scale(1.2);
+        }
+
+        .task-details {
+            flex: 1;
+        }
+
+        .task-name {
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+
+        .task-name.completed {
+            text-decoration: line-through;
+            color: #6c757d;
+        }
+
+        .task-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+
+        .task-date {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .task-status {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-completed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-overdue {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .task-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .task-edit-form {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+        }
+
+        .task-edit-input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 30px;
+            color: #6c757d;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .empty-state h3 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .flash-messages {
+            margin-bottom: 20px;
+        }
+
+        .flash-message {
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+
+        .flash-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .flash-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                flex-direction: column;
+            }
+
+            .task-content {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .task-info {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+
+            .task-actions {
+                justify-content: space-between;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-tasks"></i> Task Manager Pro</h1>
+            <p>Stay organized and boost your productivity</p>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash-message flash-{{ 'success' if category == 'success' else 'error' }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <!-- Add Task Form -->
+        <div class="add-task-form">
+            <form method="POST" action="/add" id="addTaskForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="taskName">Task Name</label>
+                        <input type="text" id="taskName" name="taskName" placeholder="What needs to be done?" required maxlength="200">
+                    </div>
+                    <div class="form-group">
+                        <label for="dueDate">Due Date (Optional)</label>
+                        <input type="date" id="dueDate" name="dueDate">
+                    </div>
+                    <div class="form-group" style="flex: 0;">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-plus"></i>
+                            Add Task
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Tasks List -->
+        <div class="tasks-container">
+            <div class="tasks-header">
+                <h2><i class="fas fa-list"></i> Your Tasks</h2>
+            </div>
+
+            {% if TaskList %}
+                {% for task in TaskList %}
+                    <div class="task-item">
+                        <div class="task-content">
+                            <div class="task-info">
+                                <input type="checkbox" class="task-checkbox" 
+                                       {% if task.is_done %}checked{% endif %} 
+                                       onchange="toggleTask({{ task.id }})">
+                                
+                                <div class="task-details">
+                                    <div class="task-name {% if task.is_done %}completed{% endif %}">
+                                        {{ task.name }}
+                                    </div>
+                                    <div class="task-meta">
+                                        {% if task.due_date %}
+                                            <div class="task-date">
+                                                <i class="fas fa-calendar"></i>
+                                                {{ task.due_date.strftime('%B %d, %Y') }}
+                                            </div>
+                                        {% endif %}
+                                        
+                                        <div class="task-status status-{{ task.status }}">
+                                            {% if task.status == 'completed' %}
+                                                <i class="fas fa-check"></i> Completed
+                                            {% elif task.status == 'overdue' %}
+                                                <i class="fas fa-exclamation-triangle"></i> Overdue
+                                            {% else %}
+                                                <i class="fas fa-clock"></i> Pending
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="task-actions">
+                                <form method="POST" action="/update" class="task-edit-form">
+                                    <input type="hidden" name="id" value="{{ task.id }}">
+                                    <input type="text" name="updateTask" value="{{ task.name }}" 
+                                           class="task-edit-input" maxlength="200">
+                                    <button type="submit" name="saveOrDelete" value="save" class="btn btn-success">
+                                        <i class="fas fa-save"></i>
+                                    </button>
+                                    <button type="submit" name="saveOrDelete" value="delete" class="btn btn-danger"
+                                            onclick="return confirm('Are you sure you want to delete this task?')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-clipboard-list"></i>
+                    <h3>No tasks yet</h3>
+                    <p>Add your first task to get started!</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        // Auto-focus on task input when page loads
+        document.getElementById('taskName').focus();
+
+        // Handle task completion toggle
+        async function toggleTask(taskId) {
+            try {
+                const response = await fetch(`/toggle/${taskId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    alert('Error updating task. Please try again.');
+                }
+            } catch (error) {
+                alert('Error updating task. Please try again.');
+                console.error('Error:', error);
+            }
+        }
+
+        // Auto-hide flash messages after 5 seconds
+        setTimeout(() => {
+            const flashMessages = document.querySelector('.flash-messages');
+            if (flashMessages) {
+                flashMessages.style.opacity = '0';
+                flashMessages.style.transition = 'opacity 0.5s ease';
+                setTimeout(() => {
+                    flashMessages.remove();
+                }, 500);
+            }
+        }, 5000);
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(event) {
+            // Ctrl/Cmd + Enter to submit add task form
+            if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+                document.getElementById('addTaskForm').submit();
+            }
+        });
+
+        // Set minimum date to today for due date input
+        document.getElementById('dueDate').min = new Date().toISOString().split('T')[0];
+    </script>
+</body>
 </html>
