@@ -15,8 +15,21 @@
             </tr>
             {% for task in TaskList: %}
                 <tr>
-                    <td>{{ task[0] }}</td>
-                    <td>{{ task[1] }}</td>
+                    <form method="POST" action="/update">
+                        <td> 
+                            <input type="hidden" name="id" value="{{ task[0] }}" />
+                            <input type="text" name="updateTask" value="{{ task[1] }}" />
+                        </td>
+                        <td> {{ task[2] }}</td>
+                        <td>
+                            <input type="submit" name="saveOrDelete" value="save" />
+                        </td>
+
+                        <td>
+                            <input type="submit" name="saveOrDelete" value="X" />
+                        </td>
+                        
+                    </form>
                 </tr>
             {% endfor %}
         </table>
